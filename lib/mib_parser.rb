@@ -1,5 +1,10 @@
 #/bin/ruby
+require "pp"
 module Mib
+    NODE_TYPE=[
+        "OBJECT IDENTIFIER",
+        "OBJECT-TYPE"
+    ]
     class Node
         attr_accessor :name,:type,:syntax,:syntax_map,:parent,:local_id,:entry_index,:oid;
         def initialize(name)
@@ -19,7 +24,7 @@ module Mib
                    self.parent=oid_list[0]
                    self.local_id = oid_list[1]
                 end
-                oid_list.collect!{|v| v=~/[\w-]+\(\d+)/ ? $1 : v}
+                oid_list.collect!{|v| v=~/[\w-]+\((\d+)\)/ ? $1 : v}
                 value = oid_list.join(".")
             end
             @oid=value
@@ -62,7 +67,7 @@ module Mib
     end
     class Table
     end
-    class MibDB < Hash
+    class NodeDB < Hash
         def initialize
             super
             self["iso"]=Node.new("iso")
@@ -78,34 +83,46 @@ module Mib
         end
     end
     class Parser
+         attr_accessor :file, :nodes, :module
          def initialize(mibfile)
              @nodes=NodeDB.new
              @file=mibfile
              File.open(mibfile) {|file| @content=file.read}
+             parse_mib_file
              @nodes.update_oid
          end
          def parse_mib_file
              type_pattern = NODE_TYPE.join("|")
-             node_pattern = /^\s*(\S+)\s+#{type_pattern}\s*(.*?)\s*::=\s*\{(.*?)\}/m
+             node_pattern = /^\s*(\S+)\s+(#{type_pattern})\s*(.*?)\s*::=\s*\{(.*?)\}/m
+             pp node_pattern
              self.parse_module_name
+             self.parse_exports
              self.parse_imports
              @content.scan(node_pattern){|nodeinfo|
-                 node      =Node.new(nodeinfo[0})
+                 pp nodeinfo
+                 node      =Node.new(nodeinfo[0].strip)
                  @nodes    << node
-                 node.type = nodeinfo[1]
-                 node.oid  = nodeinfo[3]
-                 self.parse_node_info(nodeinfo[2], node)
+                 node.type = nodeinfo[1].strip
+                 node.oid  = nodeinfo[3].strip
+                 self.parse_node_info(nodeinfo[2].strip, node)
              }
          end
          def parse_module_name
-             module_pattern = /(\S+)\s+DEFINITION\s*::=\s*BEGIN/
+             module_pattern = /(\S+)\s+DEFINITIONS\s*::=\s*BEGIN/
              if @content =~ module_pattern
                  @module=$1
                  @content=$'
              end
          end
+         def parse_exports
+             exports_pattern = /EXPORTS\s*(.*?);/m
+             if @content =~ exports_pattern
+                 @module=$1
+                 @content=$'
+             end
+         end
          def parse_imports
-             imports_pattern = /(\S+)\s+DEFINITION\s*::=\s*BEGIN/
+             imports_pattern = /IMPORTS\s*(.*?);/m
              if @content =~ imports_pattern
                  @module=$1
                  @content=$'
@@ -123,7 +140,7 @@ module Mib
                  node_obj.description=$1.gsub(/^\s*--.*$/, "")
              end
              if content =~ /INDEX\s*\{(.*?)\}/m
-                 node_obj.index=$1.strip
+                 node_obj.entry_index=$1.strip
              end
              if content =~ /STATUS\s+(\S+)/
                  node_obj.status=$1.strip
@@ -131,8 +148,3 @@ module Mib
          end
     end
 end
-
-require "pp"
-file=''
-mibparser=Mib::Parser.new(file)
-pp mibparser.nodes

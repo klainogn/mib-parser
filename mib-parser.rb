@@ -1,1 +1,1 @@
-require 'mib_parser'
+require 'lib/mib_parser'
