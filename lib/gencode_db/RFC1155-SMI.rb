@@ -1,0 +1,41 @@
+module Mib
+@nodeDB << Node.new('experimentali')
+@nodeDB['experimental'].type = 'OBJECT IDENTIFIER'
+@nodeDB['experimental'].local_id = '3'
+@nodeDB['experimental'].oid = '1.3.6.1.3'
+@nodeDB['experimental'].parent = 'internet'
+@nodeDB['experimental'].name = 'experimental'
+@nodeDB['experimental'].module = 'RFC1155-SMI'
+@nodeDB << Node.new('interneti')
+@nodeDB['internet'].type = 'OBJECT IDENTIFIER'
+@nodeDB['internet'].oid = '1.3.6.1'
+@nodeDB['internet'].name = 'internet'
+@nodeDB['internet'].module = 'RFC1155-SMI'
+@nodeDB << Node.new('mgmti')
+@nodeDB['mgmt'].type = 'OBJECT IDENTIFIER'
+@nodeDB['mgmt'].local_id = '2'
+@nodeDB['mgmt'].oid = '1.3.6.1.2'
+@nodeDB['mgmt'].parent = 'internet'
+@nodeDB['mgmt'].name = 'mgmt'
+@nodeDB['mgmt'].module = 'RFC1155-SMI'
+@nodeDB << Node.new('enterprisesi')
+@nodeDB['enterprises'].type = 'OBJECT IDENTIFIER'
+@nodeDB['enterprises'].local_id = '1'
+@nodeDB['enterprises'].oid = '1.3.6.1.4.1'
+@nodeDB['enterprises'].parent = 'private'
+@nodeDB['enterprises'].name = 'enterprises'
+@nodeDB['enterprises'].module = 'RFC1155-SMI'
+@nodeDB << Node.new('privatei')
+@nodeDB['private'].type = 'OBJECT IDENTIFIER'
+@nodeDB['private'].local_id = '4'
+@nodeDB['private'].oid = '1.3.6.1.4'
+@nodeDB['private'].parent = 'internet'
+@nodeDB['private'].name = 'private'
+@nodeDB['private'].module = 'RFC1155-SMI'
+@nodeDB << Node.new('directoryi')
+@nodeDB['directory'].type = 'OBJECT IDENTIFIER'
+@nodeDB['directory'].local_id = '1'
+@nodeDB['directory'].oid = '1.3.6.1.1'
+@nodeDB['directory'].parent = 'internet'
+@nodeDB['directory'].name = 'directory'
+@nodeDB['directory'].module = 'RFC1155-SMI'

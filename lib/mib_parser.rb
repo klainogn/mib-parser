@@ -1,99 +1,21 @@
-#/bin/ruby
-require "pp"
 module Mib
-    NODE_TYPE=[
-        "OBJECT IDENTIFIER",
-        "OBJECT-TYPE"
-    ]
-    class Node
-        attr_accessor :name,:type,:syntax,:syntax_map,:parent,:local_id,:entry_index,:oid;
-        def initialize(name)
-            @name=name
-        end
-        def oid
-            if @oid.nil?
-                @oid=self.parent
-                @oid << "." + self.local_id.to_s if self.local_id.to_s.length > 0
-            end
-            @oid
-	end
-        def oid=(value)
-            if value.is_a?(String)
-                oid_list=value.split(/\s+/)
-                if oid_list.length==2
-                   self.parent=oid_list[0]
-                   self.local_id = oid_list[1]
-                end
-                oid_list.collect!{|v| v=~/[\w-]+\((\d+)\)/ ? $1 : v}
-                value = oid_list.join(".")
-            end
-            @oid=value
-        end
-        def syntax=(value)
-            if value.downcase == "rawstatus"
-               @syntax_map={
-                    "createAndGo"=> "4",
-                    "destroy"    => "6"
-               }
-            end
-            @syntax=value
-        end
-        def syntax_map=(value)
-            if value.is_a?(String)
-               maps={}
-               value.scan(/([\w-]+)\s*([\d-])/){|kv|                
-                   maps[k]=v
-               }
-               @syntax_map=maps
-            else
-               @syntax_map=value
-            end
-        end 
-        def update_oid(mibdb)
-            oid_list=self.oid.split(".")
-	    parent_node=mibdb[oid_list[0]]
-            if self.name == self.parent
-               puts "Node info is not correct"
-               return
-            end
-	    if parent_node
-                parent_oid=parent_node.update_oid(mibdb)
-                oid_list[0]=parent_oid
-                @oid=oid_list.join(".")
-            end
-            @oid
-	end
-
-    end
-    class Table
-    end
-    class NodeDB < Hash
-        def initialize
-            super
-            self["iso"]=Node.new("iso")
-            self["iso"].oid="1"
-        end
-        def <<(node)
-            self[node.name]=node
-	end
-        def update_oid
-            self.each {|name, node|
-                node.update_oid(self)
-            }
-        end
-    end
-    class Parser
+   class Parser
          attr_accessor :file, :nodes, :module
          def initialize(mibfile)
-             @nodes=NodeDB.new
-             @file=mibfile
+             @nodeDB=NodeDB.new
+             @nodes =NodeDB.new
+             @file=File.basename(mibfile)
              File.open(mibfile) {|file| @content=file.read}
              parse_mib_file
-             @nodes.update_oid
+             load_modules
+             @nodeDB.update_oid
+             @nodeDB.each{|name, node|
+                 @nodes << node if node.module == self.module 
+             }
          end
          def parse_mib_file
              type_pattern = NODE_TYPE.join("|")
-             node_pattern = /^\s*(\S+)\s+(#{type_pattern})\s*(.*?)\s*::=\s*\{(.*?)\}/m
+             node_pattern = /^\s*(\S+)\s+(#{type_pattern})\s*(.*?)\s*::=\s*\{\s*(.*?)\s*\}/m
              pp node_pattern
              self.parse_module_name
              self.parse_exports
@@ -101,7 +23,8 @@ module Mib
              @content.scan(node_pattern){|nodeinfo|
                  pp nodeinfo
                  node      =Node.new(nodeinfo[0].strip)
-                 @nodes    << node
+                 @nodeDB    << node
+                 node.module = @module
                  node.type = nodeinfo[1].strip
                  node.oid  = nodeinfo[3].strip
                  self.parse_node_info(nodeinfo[2].strip, node)
@@ -117,15 +40,17 @@ module Mib
          def parse_exports
              exports_pattern = /EXPORTS\s*(.*?);/m
              if @content =~ exports_pattern
-                 @module=$1
-                 @content=$'
+                 @exports=$1.strip.split(/\s*,\s*/)
              end
          end
          def parse_imports
              imports_pattern = /IMPORTS\s*(.*?);/m
              if @content =~ imports_pattern
-                 @module=$1
-                 @content=$'
+                 @imports={}
+                 import_info=$1
+                 import_info.scan(/(.*?)\s+FROM\s+(\S+)/) {|import|
+                     @imports[import[1]]=import[0].split(/\s*,\s*/) 
+                 }
              end
          end
          def parse_node_info(content, node_obj)
@@ -145,6 +70,18 @@ module Mib
              if content =~ /STATUS\s+(\S+)/
                  node_obj.status=$1.strip
              end
+         end
+         def get_node(name=nil)
+             if name.nil?
+                @nodes
+             else
+                @nodeDB[name]
+             end
+         end
+         def load_modules
+             @imports.keys.each {|mod_name|
+                 @nodeDB.load_module(mode_name.to_s)
+             }
          end
     end
 end
