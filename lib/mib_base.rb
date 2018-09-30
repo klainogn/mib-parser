@@ -4,7 +4,8 @@ module Mib
         "OBJECT-TYPE"
     ]
     class Node
-        attr_accessor :name,:type,:syntax,:syntax_map,:parent,:local_id,:entry_index,:oid,:module;
+        attr_accessor :name,:type,:syntax,:syntax_map,:description,:parent,:local_id;
+        attr_accessor :status,:entry_index,:oid,:module;
         def initialize(name)
             @name=name
         end
