@@ -1,6 +1,7 @@
 module Mib
     class NodeDB
         MIB_DB_PATH = File.dirname(__FILE__)+"/gencode_db"
+        MIB_FILE_PATH = File.dirname(__FILE__) + "/../mibs"
         @@node_db={}
         @@node_db["iso"]=Node.new("iso")
         @@node_db["iso"].oid="1"
@@ -31,11 +32,17 @@ module Mib
            file.write(code)
         end
         def self.load_module(module_name)
-            module_file=MIB_DB_PATH + "/" + module_name + ".rb"
+            module_db_file=MIB_DB_PATH + "/" + module_name + ".rb"
             begin
-                require module_file #if FileTest.exist?(module_file)
+                require module_db_file 
             rescue Exception=> e
-                puts e          
+                module_mib_file=MIB_FILE_PATH + "/" + module_name + ".mib"
+                if FileTest.exist?(module_mib_file)
+                    mib_parser= Parser.new(module_mib_file)
+                    self.gen_code(mib_parser.module)
+                else
+                    puts e          
+                end
             end
         end
         def self.get_nodes_by_module(module_name)
