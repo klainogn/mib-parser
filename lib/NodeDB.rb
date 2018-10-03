@@ -21,7 +21,7 @@ module Mib
             code="module Mib\n"
             @@node_db.each {|name, node|
                 if node.module == module_name
-                    code << "    node = Node.new('#{name}i')\n"      
+                    code << "    node = Node.new('#{name}')\n"      
                     node.instance_variables.each {|var|
                          code << "    node.#{var.sub("@", "")} = '#{node.instance_eval(var)}'\n" 
                     }

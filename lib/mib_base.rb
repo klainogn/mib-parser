@@ -1,11 +1,16 @@
 module Mib
     NODE_TYPE=[
         "OBJECT IDENTIFIER",
-        "OBJECT-TYPE"
+        "OBJECT-TYPE",
+        "MODULE-IDENTITY",
+        "NOTIFICATION-TYPE",
+        "MODULE-COMPLIANCE",
+        "OBJECT-GROUP",
+        "NOTIFICATION-GROUP"
     ]
     class Node
         attr_accessor :name,:type,:syntax,:syntax_map,:description,:parent,:local_id;
-        attr_accessor :status,:entry_index,:oid,:module;
+        attr_accessor :max_access, :status,:entry_index,:oid,:module;
         def initialize(name)
             @name=name
         end
@@ -40,7 +45,7 @@ module Mib
         def syntax_map=(value)
             if value.is_a?(String)
                maps={}
-               value.scan(/([\w-]+)\s*([\d-])/){|kv|                
+               value.scan(/([\w-]+)\s*\((-?[\d]+)\)/){|k, v|
                    maps[k]=v
                }
                @syntax_map=maps
@@ -62,7 +67,6 @@ module Mib
             end
             @oid
 	end
-
     end
     class Table
     end

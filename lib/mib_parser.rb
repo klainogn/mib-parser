@@ -1,6 +1,6 @@
 module Mib
    class Parser
-         attr_accessor :file, :nodes, :module
+         attr_accessor :file, :nodes, :module, :imports, :exports
          def initialize(mibfile)
              @file=File.basename(mibfile)
              File.open(mibfile) {|file| @content=file.read}
@@ -43,15 +43,15 @@ module Mib
                  @content    = $'
                  @imports    = {}
                  import_info = $1
-                 import_info.scan(/(.*?)\s+FROM\s+(\S+)/) {|import|
+                 import_info.scan(/\s*(.*?)\s+FROM\s+(\S+)/) {|import|
                      @imports[import[1]]=import[0].split(/\s*,\s*/) 
                  }
              end
          end
          def parse_node_info(content, node_obj)
-             if content =~ /SYNTAX\s+(\S+)\s*(?=\{\})\s*$/m
+             if content =~ /SYNTAX\s+(\S+)\s*(\{(.*?)\})?/m
                  node_obj.syntax=$1.strip
-                 node_obj.syntax_map=$2.strip if $2
+                 node_obj.syntax_map=$3.strip if $3
              end
              if content =~ /MAX-ACCESS\s+(\S+)/
                  node_obj.max_access=$1.strip
